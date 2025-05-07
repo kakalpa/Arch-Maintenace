@@ -1,0 +1,68 @@
+# 🛠️ Arch Linux Maintenance Script
+
+This script automates routine maintenance tasks on Arch Linux
+
+## 📄 Description
+
+The script helps you:
+
+- Update system and AUR packages
+- Clean the package cache and orphaned packages
+- Manage journal logs
+- Refresh mirrorlists
+- Clean up unused Flatpak packages
+- Perform system health checks
+
+## 🚀 Usage
+
+1. **Download the script**:
+    ```bash
+    curl -O https://yourdomain.com/arch-maintenance.sh  # replace with your actual link
+    ```
+
+2. **Make it executable**:
+    ```bash
+    chmod +x arch-maintenance.sh
+    ```
+
+3. **Run the script**:
+    ```bash
+    ./arch-maintenance.sh
+    ```
+
+> **Note:** This script requires `sudo` privileges for certain operations.
+
+## ✅ Features
+
+- System update with `pacman` and AUR helper (`yay`)
+- Package cache cleaning
+- Removal of orphaned packages
+- Journal log vacuuming
+- Mirrorlist updates using `reflector`
+- Flatpak cleanup
+- System integrity checks
+
+## 📦 Dependencies
+
+Make sure the following tools are installed:
+
+| Tool       | Install Command                     | Purpose                       |
+|------------|--------------------------------------|-------------------------------|
+| `pacman`   | Built-in                             | System package management     |
+| `paru`     | `yay -S`                             | AUR package management        |
+| `reflector`| `sudo pacman -S reflector`           | Mirrorlist updating           |
+| `flatpak`  | `sudo pacman -S flatpak`             | Optional Flatpak support      |
+
+## 🧠 Safety Tips
+
+- Review the script before running to understand what it does.
+- Run parts manually if you're unsure.
+- Always back up critical data before major updates.
+
+## 📄 License
+
+This script is open-source and available under the [MIT License](LICENSE).
+
+---
+
+Happy Hacking! ⚡
