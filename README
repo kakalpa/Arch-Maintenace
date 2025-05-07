@@ -17,7 +17,7 @@ The script helps you:
 
 1. **Download the script**:
     ```bash
-    curl -O https://yourdomain.com/arch-maintenance.sh  # replace with your actual link
+    curl -O https://github.com/kakalpa/Arch-Maintenace/blob/main/maintance_script.sh  
     ```
 
 2. **Make it executable**:
