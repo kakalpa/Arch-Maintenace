@@ -1,68 +1,115 @@
 #!/bin/bash
 
-# Arch Linux System Maintenance Script (Single Log File)
+# Arch Linux System Maintenance Script with -v, --help, and -a <AUR helper>
 # Author: Kalpa Kuruwita
 
 set -euo pipefail
 
 LOG_DIR="/var/log/arch-maintenance"
 LOG_FILE="$LOG_DIR/maintenance.log"
+VERBOSE=false
+AUR_HELPER="yay"  # default
+
+# Help message
+show_help() {
+  cat << EOF
+Usage: $(basename "$0") [OPTIONS]
+
+Options:
+  -v              Verbose mode (prints output to terminal and log file)
+  -a <helper>     Specify AUR helper (e.g. paru, yay, or 'none' to skip)
+  --help          Display this help message
+
+This script performs routine Arch Linux system maintenance tasks:
+  - System + AUR updates
+  - Package and journal cleanup
+  - Orphaned package removal
+  - Mirrorlist update (requires 'reflector')
+  - Flatpak cleanup (if installed)
+EOF
+  exit 0
+}
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -v)
+      VERBOSE=true
+      shift
+      ;;
+    -a)
+      AUR_HELPER="$2"
+      shift 2
+      ;;
+    --help)
+      show_help
+      ;;
+    *)
+      echo "❌ Unknown option: $1. Use --help for usage."
+      exit 1
+      ;;
+  esac
+done
 
 # Ensure log directory exists
 sudo mkdir -p "$LOG_DIR"
 sudo chown "$USER":"$USER" "$LOG_DIR"
 
-echo "🕒 $(date): Starting Arch Linux system maintenance..." | tee -a "$LOG_FILE"
+# Logging function
+log() {
+  if $VERBOSE; then
+    echo -e "$1" | tee -a "$LOG_FILE"
+  else
+    echo -e "$1" >> "$LOG_FILE"
+  fi
+}
 
-# 1. Update system packages
-echo "📦 Updating system packages..." | tee -a "$LOG_FILE"
+log "\n🕒 $(date): Starting Arch Linux system maintenance..."
+
+log "📦 Updating system packages..."
 sudo pacman -Syu --noconfirm &>> "$LOG_FILE"
 
-# 2. Clean package cache
-echo "🧹 Cleaning package cache..." | tee -a "$LOG_FILE"
+log "🧹 Cleaning package cache..."
 sudo paccache -r &>> "$LOG_FILE"
 
-# 3. Remove orphaned packages
-echo "🗑️ Removing orphaned packages..." | tee -a "$LOG_FILE"
+log "🗑️ Removing orphaned packages..."
 orphans=$(pacman -Qtdq || true)
 if [[ -n "$orphans" ]]; then
   sudo pacman -Rns --noconfirm $orphans &>> "$LOG_FILE"
 else
-  echo "✅ No orphaned packages found." | tee -a "$LOG_FILE"
+  log "✅ No orphaned packages found."
 fi
 
-# 4. Update AUR packages (if paru exists)
-if command -v paru &> /dev/null; then
-  echo "📦 Updating AUR packages..." | tee -a "$LOG_FILE"
-  yay -Syu --noconfirm &>> "$LOG_FILE"
+# AUR update logic
+if [[ "$AUR_HELPER" == "none" ]]; then
+  log "🚫 Skipping AUR package updates."
+elif command -v "$AUR_HELPER" &> /dev/null; then
+  log "📦 Updating AUR packages with '$AUR_HELPER'..."
+  "$AUR_HELPER" -Syu --noconfirm &>> "$LOG_FILE"
 else
-  echo "⚠️ 'yay' not found. Skipping AUR updates." | tee -a "$LOG_FILE"
+  log "⚠️ AUR helper '$AUR_HELPER' not found. Skipping AUR updates."
 fi
 
-# 5. Clean journal logs
-echo "🧾 Cleaning journal logs..." | tee -a "$LOG_FILE"
+log "🧾 Cleaning journal logs..."
 sudo journalctl --vacuum-time=2weeks &>> "$LOG_FILE"
 sudo journalctl --vacuum-size=100M &>> "$LOG_FILE"
 
-# 6. Check system health
-echo "🩺 Checking system health..." | tee -a "$LOG_FILE"
+log "🩺 Checking system health..."
 systemctl --failed &>> "$LOG_FILE"
 sudo pacman -Qk &>> "$LOG_FILE"
 
-# 7. Update mirrorlist
 if command -v reflector &> /dev/null; then
-  echo "🌐 Updating mirrorlist..." | tee -a "$LOG_FILE"
+  log "🌐 Updating mirrorlist..."
   sudo reflector --latest 10 --protocol https --sort rate --save /etc/pacman.d/mirrorlist &>> "$LOG_FILE"
 else
-  echo "⚠️ 'reflector' not found. Skipping mirrorlist update." | tee -a "$LOG_FILE"
+  log "⚠️ 'reflector' not found. Skipping mirrorlist update."
 fi
 
-# 8. Clean Flatpak packages
 if command -v flatpak &> /dev/null; then
-  echo "🧹 Removing unused Flatpak packages..." | tee -a "$LOG_FILE"
+  log "🧹 Removing unused Flatpak packages..."
   flatpak uninstall --unused -y &>> "$LOG_FILE"
 else
-  echo "ℹ️ Flatpak not installed. Skipping Flatpak cleanup." | tee -a "$LOG_FILE"
+  log "ℹ️ Flatpak not installed. Skipping Flatpak cleanup."
 fi
 
-echo "✅ Done: Arch Linux system maintenance completed at $(date)." | tee -a "$LOG_FILE"
+log "✅ Done: Maintenance completed at $(date)."

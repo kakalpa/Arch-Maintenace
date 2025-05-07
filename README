@@ -28,7 +28,12 @@ The script helps you:
 3. **Run the script**:
     ```bash
     ./arch-maintenance.sh
-```
+    ```
+    **Ussage**:
+    -a to select the AUR helper yay/paru
+    -h for help 
+    -v for vebrose
+
 
 > **Note:** This script requires `sudo` privileges for certain operations.
 
@@ -60,7 +65,7 @@ Make sure the following tools are installed:
 - Run parts manually if you're unsure.
 - Always back up critical data before major updates.
 
-## Run As Cron
+## 🕒 Run As Cron
 
 ```
 ```bash
