@@ -22,7 +22,7 @@ The script helps you:
 
 2. **Make it executable**:
     ```bash
-    chmod +x arch-maintenance.sh
+    chmod +x maintenance_script.sh
     ```
 
 3. **Run the script**:
