@@ -28,7 +28,7 @@ The script helps you:
 3. **Run the script**:
     ```bash
     ./arch-maintenance.sh
-    ```
+```
 
 > **Note:** This script requires `sudo` privileges for certain operations.
 
@@ -59,6 +59,19 @@ Make sure the following tools are installed:
 - Run parts manually if you're unsure.
 - Always back up critical data before major updates.
 
+## Run As Cron
+
+```
+sudo mv arch-maintenance.sh /usr/local/bin/arch-maintenance.sh
+sudo chmod +x /usr/local/bin/arch-maintenance.sh
+
+30 2 * * 0 /usr/local/bin/arch-maintenance.sh >> /var/log/arch-maintenance.log 2>&1```
+
+- Cron Genarator 
+[text](https://crontab.guru/)
+
+
+
 ## 📄 License
 
 This script is open-source and available under the [MIT License](LICENSE).
@@ -66,3 +79,4 @@ This script is open-source and available under the [MIT License](LICENSE).
 ---
 
 Happy Hacking! ⚡
+https://github.com/kakalpa/Arch-Maintenace/blob/main/maintance_script.sh
