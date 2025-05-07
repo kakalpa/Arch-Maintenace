@@ -1,67 +1,115 @@
 #!/bin/bash
 
-# Arch Linux System Maintenance Script
-# Inspired by Fernando Cejas' blog post
+# Arch Linux System Maintenance Script with -v, --help, and -a <AUR helper>
+# Author: Kalpa Kuruwita
 
 set -euo pipefail
 
-echo "🔧 Starting Arch Linux system maintenance..."
+LOG_DIR="/var/log/arch-maintenance"
+LOG_FILE="$LOG_DIR/maintenance.log"
+VERBOSE=false
+AUR_HELPER="yay"  # default
 
-# 1. Update system packages
-echo "📦 Updating system packages..."
-sudo pacman -Syu --noconfirm
+# Help message
+show_help() {
+  cat << EOF
+Usage: $(basename "$0") [OPTIONS]
 
-# 2. Clean package cache
-echo "🧹 Cleaning package cache..."
-sudo paccache -r
+Options:
+  -v              Verbose mode (prints output to terminal and log file)
+  -a <helper>     Specify AUR helper (e.g. paru, yay, or 'none' to skip)
+  --help          Display this help message
 
-# 3. Remove orphaned packages
-echo "🗑️ Removing orphaned packages..."
+This script performs routine Arch Linux system maintenance tasks:
+  - System + AUR updates
+  - Package and journal cleanup
+  - Orphaned package removal
+  - Mirrorlist update (requires 'reflector')
+  - Flatpak cleanup (if installed)
+EOF
+  exit 0
+}
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -v)
+      VERBOSE=true
+      shift
+      ;;
+    -a)
+      AUR_HELPER="$2"
+      shift 2
+      ;;
+    --help)
+      show_help
+      ;;
+    *)
+      echo "❌ Unknown option: $1. Use --help for usage."
+      exit 1
+      ;;
+  esac
+done
+
+# Ensure log directory exists
+sudo mkdir -p "$LOG_DIR"
+sudo chown "$USER":"$USER" "$LOG_DIR"
+
+# Logging function
+log() {
+  if $VERBOSE; then
+    echo -e "$1" | tee -a "$LOG_FILE"
+  else
+    echo -e "$1" >> "$LOG_FILE"
+  fi
+}
+
+log "\n🕒 $(date): Starting Arch Linux system maintenance..."
+
+log "📦 Updating system packages..."
+sudo pacman -Syu --noconfirm &>> "$LOG_FILE"
+
+log "🧹 Cleaning package cache..."
+sudo paccache -r &>> "$LOG_FILE"
+
+log "🗑️ Removing orphaned packages..."
 orphans=$(pacman -Qtdq || true)
 if [[ -n "$orphans" ]]; then
-  sudo pacman -Rns --noconfirm $orphans
+  sudo pacman -Rns --noconfirm $orphans &>> "$LOG_FILE"
 else
-  echo "✅ No orphaned packages found."
+  log "✅ No orphaned packages found."
 fi
 
-# 4. Update AUR packages (requires 'paru' AUR helper)
-if command -v paru &> /dev/null; then
-  echo "📦 Updating AUR packages..."
-  paru -Syu --noconfirm
+# AUR update logic
+if [[ "$AUR_HELPER" == "none" ]]; then
+  log "🚫 Skipping AUR package updates."
+elif command -v "$AUR_HELPER" &> /dev/null; then
+  log "📦 Updating AUR packages with '$AUR_HELPER'..."
+  "$AUR_HELPER" -Syu --noconfirm &>> "$LOG_FILE"
 else
-  echo "⚠️ 'yay' not found. Skipping AUR package updates."
+  log "⚠️ AUR helper '$AUR_HELPER' not found. Skipping AUR updates."
 fi
 
-# 5. Clean journal logs older than 2 weeks
-echo "🧾 Cleaning journal logs older than 2 weeks..."
-sudo journalctl --vacuum-time=2weeks
+log "🧾 Cleaning journal logs..."
+sudo journalctl --vacuum-time=2weeks &>> "$LOG_FILE"
+sudo journalctl --vacuum-size=100M &>> "$LOG_FILE"
 
-# 6. Check system health
-echo "🩺 Checking system health..."
-systemctl --failed
+log "🩺 Checking system health..."
+systemctl --failed &>> "$LOG_FILE"
+sudo pacman -Qk &>> "$LOG_FILE"
 
-# 7. Verify package integrity
-echo "🔍 Verifying package integrity..."
-sudo pacman -Qk
-
-# 8. Update mirrorlist (requires 'reflector')
 if command -v reflector &> /dev/null; then
-  echo "🌐 Updating mirrorlist..."
-  sudo reflector --latest 10 --protocol https --sort rate --save /etc/pacman.d/mirrorlist
+  log "🌐 Updating mirrorlist..."
+  sudo reflector --latest 10 --protocol https --sort rate --save /etc/pacman.d/mirrorlist &>> "$LOG_FILE"
 else
-  echo "⚠️ 'reflector' not found. Skipping mirrorlist update."
+  log "⚠️ 'reflector' not found. Skipping mirrorlist update."
 fi
 
-# 9. Remove unused Flatpak packages (if Flatpak is installed)
 if command -v flatpak &> /dev/null; then
-  echo "🧹 Removing unused Flatpak packages..."
-  flatpak uninstall --unused -y
+  log "🧹 Removing unused Flatpak packages..."
+  flatpak uninstall --unused -y &>> "$LOG_FILE"
 else
-  echo "ℹ️ Flatpak not installed. Skipping Flatpak cleanup."
+  log "ℹ️ Flatpak not installed. Skipping Flatpak cleanup."
 fi
 
-# 10. Clean systemd journal logs
-echo "🧾 Cleaning systemd journal logs..."
-sudo journalctl --vacuum-size=100M
-
-echo "✅ Arch Linux system maintenance completed successfully!"
+log "✅ Done: Maintenance completed at $(date)."

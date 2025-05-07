@@ -29,6 +29,11 @@ The script helps you:
     ```bash
     ./arch-maintenance.sh
     ```
+    **Ussage**:
+    -a to select the AUR helper yay/paru
+    -h for help 
+    -v for vebrose
+
 
 > **Note:** This script requires `sudo` privileges for certain operations.
 
@@ -41,6 +46,7 @@ The script helps you:
 - Mirrorlist updates using `reflector`
 - Flatpak cleanup
 - System integrity checks
+- Logs are wrriten in /var/log/arch-maintenance/maintance.log
 
 ## 📦 Dependencies
 
@@ -59,6 +65,23 @@ Make sure the following tools are installed:
 - Run parts manually if you're unsure.
 - Always back up critical data before major updates.
 
+## 🕒 Run As Cron
+
+```
+```bash
+sudo mv arch-maintenance.sh /usr/local/bin/arch-maintenance.sh
+sudo chmod +x /usr/local/bin/arch-maintenance.sh
+```
+```bash
+30 2 * * 0 /usr/local/bin/arch-maintenance.sh >> /var/log/arch-maintenance.log 2>&1
+```
+
+
+-Cron Genarator 
+[text](https://crontab.guru/)
+
+
+
 ## 📄 License
 
 This script is open-source and available under the [MIT License](LICENSE).
@@ -66,3 +89,4 @@ This script is open-source and available under the [MIT License](LICENSE).
 ---
 
 Happy Hacking! ⚡
+https://github.com/kakalpa/Arch-Maintenace/blob/main/maintance_script.sh
